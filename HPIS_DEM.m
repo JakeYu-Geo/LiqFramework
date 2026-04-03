@@ -1,27 +1,27 @@
-%% ========== 主程序：IS 模型模拟应力控制不排水循环扭剪（单位：kPa）==========
+%% ========== 主程序：ISA 模型模拟应力控制不排水循环扭剪（单位：kPa）==========
 clear all; clc; close all;
 
 % ---------- 模型参数（DEM，应力单位统一为 kPa）----------
 props = [
     28*pi/180;  % 1  phic  临界摩擦角 (rad)
     0;          % 2  [已移除] 占位
-    2500;       % 3  hs    颗粒硬度 (kPa)  原 2.6e6 Pa → 2600 kPa
+    4000;       % 3  hs    颗粒硬度 (kPa)  原 2.6e6 Pa → 2600 kPa
     0.27;        % 4  n     指数
     0.61;       % 5  ed0   最小孔隙比 (p=0)
     0.89;       % 6  ec0   临界孔隙比 (p=0)
     1.00;       % 7  ei0   最大孔隙比 (p=0)
-    0.14;       % 8  alpha 密度敏感指数
-    3.0;        % 9  beta  密度敏感指数（用于fb）
-    2.75;        % 10 mt    传统IS参数
-    5.5;        % 11 mR    最大刚度放大因子
+    0.2;       % 8  alpha 密度敏感指数
+    4.0;        % 9  beta  密度敏感指数（用于fb）
+    0.0;        % 10 mt    传统IS参数
+    4.5;        % 11 mR    最大刚度放大因子
     1.0e-4;     % 12 R     屈服面直径（应变）
-    0.1;        % 13 betaR0 硬化率
-    0;        % 14 chi0  初始 chi
-    2.4;       % 15 chi  chi
-    0.0;       % 16 eaccPar 循环累积参数
+    0.08;        % 13 betaR0 硬化率
+    0.9;        % 14 chi0  初始 chi
+    3.7;       % 15 chi  chi
+    0.02;       % 16 eaccPar 循环累积参数
     0;          % 17 
-    0;        % 18 cz    Z 张量演化速率
-    0;        % 19 beta_hor 各向同性硬化修正
+    300;        % 18 cz    Z 张量演化速率
+    3;        % 19 beta_hor 各向同性硬化修正
     0.11;       % 20 gamma0_max 液化后最大剪应变
 ];
 ntens = 6;      % Voigt 记号 6 分量
@@ -29,7 +29,7 @@ ntens = 6;      % Voigt 记号 6 分量
 % ---------- 初始状态（有效应力，单位 kPa）----------
 p0   = 100;                       % 初始有效围压 100 kPa
 stress0 = [-p0; -p0; -p0; 0; 0; 0]; % 有效应力（拉正压负）
-void0 = 0.655;                      % 初始孔隙比
+void0 = 0.693;                      % 初始孔隙比
 stran = zeros(ntens,1);           % 总应变
 
 % 状态变量向量（长度≥75）
@@ -42,9 +42,9 @@ statev(80) = 0;
 statev = Initialasv(statev, props, ntens);  % 初始化 intergranular strain
 
 % ---------- 应力控制循环参数 ----------
-q_target = 30;                  % 目标偏应力幅值 (kPa)
-axial_inc = 5e-4;              % 每步轴向应变增量（压缩为正）
-total_steps = 9100;            % 总计算步数
+q_target = 20;                  % 目标偏应力幅值 (kPa)
+axial_inc = 2e-4;              % 每步轴向应变增量（压缩为正）
+total_steps = 15100;            % 总计算步数
 
 % 初始化加载方向：+1 为压缩，-1 为拉伸
 dir = 1;
@@ -93,7 +93,7 @@ subplot(212); plot(hist.p, hist.q); grid on; axis equal;
 xlabel('p (kPa)'); ylabel('q (kPa)'); title('有效应力路径');
 
 %% ========== 本地函数 ==========
-% ------- IS 本构积分核心-------
+% ------- ISA 本构积分核心-------
 function [stress, statev] = umatIS(stress, statev, stran, dstran, props)
     % props 顺序见主程序注释，props(2) 已移除（占位0）
     % 所有应力单位：kPa；时间步长固定为 1（子步内 dt_sub = 1）
@@ -161,20 +161,20 @@ function [stress, statev] = umatIS(stress, statev, stran, dstran, props)
                 gamma_gen = gamma_gen - statev(80);
             end
             if gamma_gen * g + epsv_mono * 1 > gamma0 
-                stress = dev(stress) + (dstranU) * fs / 10 - delta * pcutmin;
+                stress = dev(stress) + (dstranU) * fs / 100 - delta * pcutmin;
                 trS = trace(stress,3);
                 hatT = stress/trS;
                 EEhat = Fm^2*Isym + a^2 * (hatT*hatT');
                 EE = EEhat * fs;
                 Nhp = fd0*fs*a*Fm*(hatT + (hatT - delta/3));
                 term2y = mb(doubleEE(Nb, DstranUU));
-                chi_cur = props(15);%props(14) + eacc*(props(15)-props(14));
+                chi_cur = props(14) + eacc*(props(15)-props(14));
                 term3y = rho^chi_cur; yh = term2y * term3y;
                 vN1 = Nhp; v1N = DstranUU'; v1N(4:6) = v1N(4:6)/2;
                 Jmom = (props(11) + (1-props(11))*yh) * (EE + term3y * (vN1 * v1N));
                 [dp,~] = pq(Jmom * dstranU);
                 while dp < 0.05
-                    stress = dev(stress) + (dstranU) * fs / 10 - delta * pcutmin;
+                    stress = dev(stress) + (dstranU) * fs / 100 - delta * pcutmin;
                     trS = trace(stress,3);
                     hatT = stress/trS;
                     EEhat = Fm^2*Isym + a^2 * (hatT*hatT');
@@ -222,7 +222,7 @@ function [stress, statev] = umatIS(stress, statev, stran, dstran, props)
             EE = EEhat * fs;
             Nhp = fd*fs*a*Fm*(hatT + (hatT - delta/3));
             
-            % --- IS 塑性（dt_sub=1）---
+            % --- ISA 塑性（dt_sub=1）---
             hbtrial = hb + dstranU;
             if normE(hbtrial-cb) < props(12)/2   % 弹性
                 hb = hb + dstranU;
@@ -265,7 +265,7 @@ function [stress, statev] = umatIS(stress, statev, stran, dstran, props)
                 Jmom = props(11) * EE;
             else
                 term2y = mb(doubleEE(Nb, DstranUU));
-                chi_cur = props(15);%props(14) + eacc*(props(15)-props(14));
+                chi_cur = props(14) + eacc*(props(15)-props(14));
                 term3y = rho^chi_cur; yh = term2y * term3y;
                 vN1 = Nhp; v1N = DstranUU'; v1N(4:6) = v1N(4:6)/2;
                 Jmom = (props(11) + (1-props(11))*yh) * (EE + term3y * (vN1 * v1N));
@@ -283,7 +283,7 @@ function [stress, statev] = umatIS(stress, statev, stran, dstran, props)
             [p,~] = pq(stress0);
             [dp,~] = pq(Jmom * dstranU);
             if p < pmin && dp > 0
-                if pmin - p < 0.1 && pmin < 20
+                if pmin - p < 0.3 && pmin < 20
                     pcutmin = p;
                 end
                 pmin = p;
