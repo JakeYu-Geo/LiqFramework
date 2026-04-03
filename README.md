@@ -7,7 +7,7 @@ This repository contains MATLAB implementations of a novel post‑liquefaction l
 - Uses **minimum effective stress** and **current liquefaction shear strain** as state criteria to smoothly switch between liquefied and non‑liquefied states.
 - Incorporates micro‑mechanical insights from DEM simulations (e.g., evolution of MNPD and dilatancy potential) into a physically motivated accumulation law for post‑liquefaction shear strain.
 - Introduces only a few additional parameters (`κ`, `γₐₛ₀`, `η_ε`, `η_γ`) that are easy to calibrate.
-- Successfully implemented in both the SANISAND bounding surface model and the HP+IS hypoplastic model, avoiding the numerical instabilities often encountered near zero effective stress.
+- Successfully implemented in both the SANISAND bounding surface model and the HP+ISA hypoplastic model, avoiding the numerical instabilities often encountered near zero effective stress.
 
 ## Theoretical Framework
 
