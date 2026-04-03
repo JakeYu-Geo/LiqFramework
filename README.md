@@ -1,6 +1,6 @@
 # A Simplified Framework for Simulating Large Post‑Liquefaction Strains in Sand
 
-This repository contains MATLAB implementations of a novel post‑liquefaction large‑strain constitutive framework. The framework is embedded in two widely used constitutive models: the **SANISAND** bounding surface model and the **HP+IS** hypoplastic model with intergranular strain. The proposed mechanism enables a realistic description of the progressive accumulation of shear strains under cyclic loading, up to a saturated value, while ensuring numerical stability near zero effective stress.
+This repository contains MATLAB implementations of a novel post‑liquefaction large‑strain constitutive framework. The framework is embedded in two widely used constitutive models: the **SANISAND** bounding surface model and the **HP+ISA** hypoplastic model with intergranular strain. The proposed mechanism enables a realistic description of the progressive accumulation of shear strains under cyclic loading, up to a saturated value, while ensuring numerical stability near zero effective stress.
 
 ## Key Features
 
